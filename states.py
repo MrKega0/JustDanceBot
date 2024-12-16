@@ -1,0 +1,1 @@
+MAINMENU, ADMIN, START = range(3)
