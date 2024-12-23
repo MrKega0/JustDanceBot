@@ -13,6 +13,8 @@ import os
 from constants import id_admin
 from states import *
 
+from db import shedule
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id in id_admin: # главное меню админа
@@ -31,7 +33,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=markup,
         )
         return ADMIN
-    else:
+    else:   # главное меню пользователя
         keyboard = [
             [
                 InlineKeyboardButton('Расписание', callback_data='schedule') 
@@ -66,9 +68,15 @@ async def reply_markup_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def reply_markup_admin_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-
+    
     await query.answer()
     if query.data == 'schedule':
-        print('schedule')
+        db_shedule = map(str,shedule())
+        text = '\n'.join(db_shedule)
+        await query.edit_message_text(text,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Close',callback_data='close')]]))
     elif query.data == 'subscriptions':
         print("subscriptions")
+    elif query.data == 'close':
+        await query.delete_message()
+        await start(update,context)
+    

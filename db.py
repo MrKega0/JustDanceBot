@@ -99,3 +99,19 @@ def register_user_for_lesson(user_id, lesson_id, status="Подтвержден�
         """, (user_id, lesson_id, status))
         conn.commit()
 
+# Возвращает 10 последних уроков
+def shedule():
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT name, date, time, duration, instructor, capacity, registered_users
+            FROM lessons
+            ORDER BY date DESC
+            LIMIT 10
+        """)
+        return cursor.fetchall()
+    
+
+db_shedule = map(str,shedule())
+text = '\n'.join(db_shedule)
+print(text)

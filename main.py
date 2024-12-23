@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 from common_user_func import start
 from db import create_tables
-from common_admin_func import admin_menu
+
 from states import *
 load_dotenv()
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                 MAINMENU:[CallbackQueryHandler(reply_markup_handler)],
                 ADMIN:[CallbackQueryHandler(reply_markup_admin_handler)],
                 },
-        fallbacks=[],
+        fallbacks=[CommandHandler('start',start)],
     )
 
 
