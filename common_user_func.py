@@ -12,11 +12,20 @@ from dotenv import load_dotenv
 import os
 from constants import id_admin
 from states import *
+from telegram.constants import ParseMode
 
 from db import shedule
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(context.args)
+    if context.args:
+        if context.args[0] == '2':
+            await context.bot.send_message(
+            chat_id= update.effective_chat.id,
+            text="[тык](https://t.me/SuperManBossBot?start=2)",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
     if update.effective_user.id in id_admin: # главное меню админа
         keyboard = [
             [
@@ -31,6 +40,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id= update.effective_chat.id,
             text="Меню администратора",
             reply_markup=markup,
+        )
+        await context.bot.send_message(
+            chat_id= update.effective_chat.id,
+            text="[тык](https://t.me/SuperManBossBot?start=2)",
+            parse_mode=ParseMode.MARKDOWN_V2
         )
         return ADMIN
     else:   # главное меню пользователя
@@ -71,7 +85,7 @@ async def reply_markup_admin_handler(update: Update, context: ContextTypes.DEFAU
     
     await query.answer()
     if query.data == 'schedule':
-        db_shedule = map(str,shedule())
+        db_shedule = map(str, await shedule())
         text = '\n'.join(db_shedule)
         await query.edit_message_text(text,reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Close',callback_data='close')]]))
     elif query.data == 'subscriptions':
