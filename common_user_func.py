@@ -14,7 +14,7 @@ from constants import id_admin
 from states import *
 from telegram.constants import ParseMode
 
-from db import shedule
+from db import shedule, subscriptions
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,9 +76,18 @@ async def reply_markup_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     if query.data == 'schedule':
         print('schedule')
     elif query.data == 'my subscription':
-        print("my subscription")
+        db_subscriptions = map(str, await subscriptions(context._user_id))
+        text = '\n'.join(db_subscriptions)
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton('Купить абонемент',callback_data='close')],
+            [InlineKeyboardButton('Купить 3 абонемента',callback_data='close')],
+            [InlineKeyboardButton('Close',callback_data='close')]
+            ]))
     elif query.data == 'sign up lesson':
         print('sign up lesson')
+    elif query.data == 'close':
+        await query.delete_message()
+        await start(update,context)
 
 async def reply_markup_admin_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query

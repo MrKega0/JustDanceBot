@@ -114,9 +114,21 @@ async def shedule():
     lessons = await lessons_cur.fetchall()
     await db.close()
     return lessons
-    
+
+async def subscriptions(user_id):
+    db = await aiosqlite.connect(DB_NAME)
+    subscriptions_cur = await db.execute(f"""
+        SELECT subscription_id, user_id, remaining_classes, expiration_date
+        FROM subscriptions
+        WHERE user_id = {user_id}
+        """)
+    print(subscriptions_cur)
+    subscriptions = await subscriptions_cur.fetchall()
+    await db.close()
+    return subscriptions
+
 async def main():
-    db_shedule = map(str, await shedule())
+    db_shedule = map(str, await subscriptions(1716723261))
     text = '\n'.join(db_shedule)
     print(text)
 
