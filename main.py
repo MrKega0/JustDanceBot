@@ -8,6 +8,7 @@ from telegram.ext import (
     MessageHandler,
     CallbackQueryHandler,
     PreCheckoutQueryHandler,
+    PicklePersistence,
     filters,
 )
 from dotenv import load_dotenv
@@ -36,7 +37,8 @@ logging.basicConfig(
 
 def main():
     TOKEN = os.getenv("TOKEN")
-    application = ApplicationBuilder().token(TOKEN).build()
+    persistence = PicklePersistence(filepath="bot_cache")
+    application = ApplicationBuilder().token(TOKEN).persistence(persistence).build()
 
     menu_conv_hand = ConversationHandler(
         entry_points=[CommandHandler("start", start, has_args=False)],
@@ -48,16 +50,19 @@ def main():
                 CallbackQueryHandler(
                     start_without_shipping_callback, pattern="^(pay|pay3)$"
                 ),
+                MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
             ],
         },
         fallbacks=[CommandHandler("start", start)],
+        name='menu_conv_hand',
+        persistent=True
     )
 
     application.add_handler(menu_conv_hand)
     application.add_handler(PreCheckoutQueryHandler(precheckout_callback))
-    application.add_handler(
-        MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
-    )
+    # application.add_handler(
+    #     MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
+    # )
     application.run_polling()
 
 

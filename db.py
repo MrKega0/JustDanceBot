@@ -127,7 +127,17 @@ async def subscriptions(user_id):
     await db.close()
     return subscriptions
 
+async def add_subscription(user_id, type, remaining_classes, expiration_date):
+    db = await aiosqlite.connect(DB_NAME)
+    await db.execute("""
+        INSERT INTO subscriptions (user_id, type, remaining_classes, expiration_date)
+        VALUES (?, ?, ?, ?)
+    """, (user_id, type, remaining_classes, expiration_date))
+    await db.commit()
+    await db.close()
+
 async def main():
+    # await add_subscription(1716723261,'test',10,'25-12-10')
     db_shedule = map(str, await subscriptions(1716723261))
     text = '\n'.join(db_shedule)
     print(text)

@@ -12,12 +12,12 @@ import os
 from constants import id_admin
 from states import *
 from telegram.constants import ParseMode
+import datetime
 
-from db import shedule, subscriptions
+from db import shedule, subscriptions, add_subscription
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(context.args)
     if context.args:
         if context.args[0] == "2":
             await context.bot.send_message(
@@ -55,7 +55,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer()
             # Менять текст менюшки
             await query.edit_message_text(
-                text="Привет, я бот для записи на уроки танцев, также я могу показать расписание, ваши записи и многое другое!",
+                text="Главное Меню",
                 reply_markup=markup,
             )
         else:
@@ -78,13 +78,15 @@ async def start_without_shipping_callback(
     title = "Payment Example"
     description = "Example of a payment process using the python-telegram-bot library."
     # Unique payload to identify this payment request as being from your bot
-    payload = "Custom-Payload"
+    payload = query.data
     currency = "RUB"
     # Price in dollars
-    price = 100
+    if query.data == 'pay':
+        price = 100
+    elif query.data == 'pay3':
+        price = 300
     # Convert price to cents from dollars.
-    prices = [LabeledPrice("Test", price * 100),
-              LabeledPrice("Test", price * 100)]
+    prices = [LabeledPrice("Абонемент", price * 100)]
 
     # optionally pass need_name=True, need_phone_number=True,
     # need_email=True, need_shipping_address=True, is_flexible=True
@@ -96,7 +98,7 @@ async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     """Responds to the PreCheckoutQuery as the final confirmation for checkout."""
     query = update.pre_checkout_query
     # Verify if the payload matches, ensure it's from your bot
-    if query.invoice_payload != "Custom-Payload":
+    if query.invoice_payload not in ["pay",'pay3']:
         # If not, respond with an error
         await query.answer(ok=False, error_message="Something went wrong...")
     else:
@@ -105,7 +107,18 @@ async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Acknowledges successful payment and thanks the user."""
-    await update.message.reply_text("Thank you for your payment.")
+    payload = update.effective_message.successful_payment.invoice_payload
+    now = datetime.datetime.now()
+    expire_date = now + datetime.timedelta(days=30)
+    expire_date3 = now + datetime.timedelta(days=90)
+    expire_date3_st = expire_date3.strftime('%Y-%m-%d')
+    expire_date_st = expire_date.strftime('%Y-%m-%d')
+
+    if payload == 'pay':
+        await add_subscription(update.effective_user.id,'ind',10,expire_date_st)
+    elif payload == 'pay3':
+        await add_subscription(update.effective_user.id,'ind',30,expire_date3_st)
+    return await start(update, context)
 
 async def reply_markup_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
