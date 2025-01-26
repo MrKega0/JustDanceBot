@@ -16,17 +16,21 @@ import os
 from common_user_func import start
 from db import create_tables
 
-from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, WAIT_PAYMENT
+from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, SCHEDULE
 
 load_dotenv()
 
 from common_user_func import (
-    reply_markup_handler,
-    reply_markup_admin_handler,
+    reply_markup_handler
+)
+
+from payment_for_subscription import (
     start_without_shipping_callback,
     precheckout_callback,
-    successful_payment_callback,
+    successful_payment_callback
 )
+from admin_func import reply_markup_admin_handler
+
 
 import asyncio
 
@@ -52,6 +56,7 @@ def main():
                 ),
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
             ],
+            #SCHEDULE: [CallbackQueryHandler()] #Доделать
         },
         fallbacks=[CommandHandler("start", start)],
         name='menu_conv_hand',

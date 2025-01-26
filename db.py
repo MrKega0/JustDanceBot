@@ -105,7 +105,7 @@ async def register_user_for_lesson(user_id, lesson_id, status="Подтверж�
 async def shedule():
     db = await aiosqlite.connect(DB_NAME)
     lessons_cur = await db.execute("""
-        SELECT name, date, time, duration, instructor, capacity, registered_users
+        SELECT lesson_id, name, date, time, duration, instructor, capacity, registered_users
         FROM lessons
         ORDER BY date DESC
         LIMIT 10
