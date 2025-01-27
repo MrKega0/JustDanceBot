@@ -145,15 +145,14 @@ async def add_subscription(user_id, type, remaining_classes, expiration_date):
     await db.commit()
     await db.close()
 
-async def schedule(): #Сделать чтобы выдовало расписание на день
+async def one_day_schedule(date): #Сделать чтобы выдовало расписание на день
     db = await aiosqlite.connect(DB_NAME)
-    lessons_cur = await db.execute("""
+    lessons_cur = await db.execute(f"""
         SELECT lesson_id, name, date, time, duration, instructor, capacity, registered_users
         FROM lessons
-        ORDER BY date DESC
-        LIMIT 10  
+        WHERE date = {date}
         """)
-    lessons = await lessons_cur.fetchall()
+    lessons = await lessons_cur.fetchone()
     await db.close()
     return lessons
 

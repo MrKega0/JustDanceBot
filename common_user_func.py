@@ -12,12 +12,13 @@ import os
 from constants import id_admin, days
 from states import *
 from telegram.constants import ParseMode
-import datetime
+from datetime import datetime
 
-from sup_func import escape_text, get_day
+
+from sup_func import escape_text, get_day, day_to_date
 
 import asyncio
-from db import subscriptions, add_subscription, schedule, lesson
+from db import subscriptions, add_subscription, schedule, lesson, one_day_schedule
 from admin_func import admin_start
 
 
@@ -88,13 +89,24 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
     else:
         context.user_data['current_day'] = get_day()
 
-    db_shedule = await schedule()
-    text = f"`{days[context.user_data['current_day']-1]:^15}`"
-    
-    for lesson in db_shedule:
-        text += f"\n[{lesson[5]}: {lesson[3]}](https://t.me/SuperManBossBot?start=sign_up_{lesson[0]})"
-        print(lesson)
-    
+    # datetime.date.weekday()
+    current_date = day_to_date(context.user_data['current_day'])
+    db_shedule = await one_day_schedule(current_date)
+
+    if context.user_data['current_day']>=1 and context.user_data['current_day']<=7:
+        text = f"`{days[context.user_data['current_day']-1]:^15}`"
+    else:
+        current_ru_date = datetime.strptime(current_date,"%Y-%m-%d").strftime("%d-%m-%Y")
+        text = f"`{current_ru_date:^15}`"
+
+
+    if db_shedule:
+        for lesson in db_shedule:
+            text += f"\n[{lesson[5]}: {lesson[3]}](https://t.me/SuperManBossBot?start=sign_up_{lesson[0]})"
+            print(lesson)
+    else:
+        text += '\nНет записей'
+        
     await query.edit_message_text(
         text,
         parse_mode=ParseMode.MARKDOWN_V2,
