@@ -13,7 +13,7 @@ from constants import id_admin
 from states import *
 from telegram.constants import ParseMode
 import datetime
-from db import shedule
+from db import schedule
 
 
 async def admin_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,7 +41,7 @@ async def reply_markup_admin_handler(
 
     await query.answer()
     if query.data == "schedule":
-        db_shedule = map(str, await shedule())
+        db_shedule = map(str, await schedule())
         text = "\n".join(db_shedule)
         await query.edit_message_text(
             text,

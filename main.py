@@ -16,12 +16,13 @@ import os
 from common_user_func import start
 from db import create_tables
 
-from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, SCHEDULE
+from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, SCHEDULE, SIGN_UP_LESSON
 
 load_dotenv()
 
 from common_user_func import (
-    reply_markup_handler
+    reply_markup_handler,
+    user_schedule
 )
 
 from payment_for_subscription import (
@@ -37,7 +38,7 @@ import asyncio
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
-
+# logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def main():
     TOKEN = os.getenv("TOKEN")
@@ -56,7 +57,8 @@ def main():
                 ),
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
             ],
-            #SCHEDULE: [CallbackQueryHandler()] #Доделать
+            SCHEDULE: [CallbackQueryHandler(start, pattern="^close$"), CallbackQueryHandler(user_schedule, pattern="^(<|>)$")], #Доделать
+            SIGN_UP_LESSON: [CallbackQueryHandler(user_schedule, pattern="^close$")]
         },
         fallbacks=[CommandHandler("start", start)],
         name='menu_conv_hand',

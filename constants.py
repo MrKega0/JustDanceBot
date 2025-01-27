@@ -7,3 +7,6 @@ if os.getenv('DEBUG') == 'True':
     ]
 else:
     id_admin = list(map(int, os.getenv('ADMINS_IDS').split(',')))
+
+
+days = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье']

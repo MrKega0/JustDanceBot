@@ -102,18 +102,28 @@ async def register_user_for_lesson(user_id, lesson_id, status="Подтверж�
     await db.close()
 
 # Возвращает 10 последних уроков
-async def shedule():
+async def schedule():
     db = await aiosqlite.connect(DB_NAME)
     lessons_cur = await db.execute("""
         SELECT lesson_id, name, date, time, duration, instructor, capacity, registered_users
         FROM lessons
         ORDER BY date DESC
-        LIMIT 10
+        LIMIT 10  
         """)
-    print(lessons_cur)
     lessons = await lessons_cur.fetchall()
     await db.close()
     return lessons
+
+async def lesson(lesson_id):
+    db = await aiosqlite.connect(DB_NAME)
+    lesson_cur = await db.execute(f"""
+        SELECT lesson_id, name, date, time, duration, instructor, capacity, registered_users
+        FROM lessons
+        WHERE lesson_id = {lesson_id}
+        """)
+    lesson = await lesson_cur.fetchone()
+    await db.close()
+    return lesson
 
 async def subscriptions(user_id):
     db = await aiosqlite.connect(DB_NAME)
@@ -122,7 +132,6 @@ async def subscriptions(user_id):
         FROM subscriptions
         WHERE user_id = {user_id}
         """)
-    print(subscriptions_cur)
     subscriptions = await subscriptions_cur.fetchall()
     await db.close()
     return subscriptions
@@ -136,9 +145,21 @@ async def add_subscription(user_id, type, remaining_classes, expiration_date):
     await db.commit()
     await db.close()
 
+async def schedule(): #Сделать чтобы выдовало расписание на день
+    db = await aiosqlite.connect(DB_NAME)
+    lessons_cur = await db.execute("""
+        SELECT lesson_id, name, date, time, duration, instructor, capacity, registered_users
+        FROM lessons
+        ORDER BY date DESC
+        LIMIT 10  
+        """)
+    lessons = await lessons_cur.fetchall()
+    await db.close()
+    return lessons
+
 async def main():
     # await add_subscription(1716723261,'test',10,'25-12-10')
-    db_shedule = map(str, await subscriptions(1716723261))
+    db_shedule = map(str, await lesson(1))
     text = '\n'.join(db_shedule)
     print(text)
 
