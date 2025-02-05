@@ -65,7 +65,7 @@ async def create_tables():
 async def add_user(user_id, username, full_name):
     db = await aiosqlite.connect(DB_NAME)
     await db.execute("""
-        INSERT INTO users (user_id, username, full_name)
+        INSERT OR IGNORE INTO users (user_id, username, full_name)
         VALUES (?, ?, ?)
     """, (user_id, username, full_name))
     await db.commit()
@@ -91,15 +91,6 @@ async def add_lesson(name, date, time, duration, instructor, capacity):
     await db.commit()
     await db.close()
 
-# Функция для записи пользователя на урок
-async def register_user_for_lesson(user_id, lesson_id, status="Подтверждена"):
-    db = await aiosqlite.connect(DB_NAME)
-    await db.execute("""
-        INSERT INTO registrations (user_id, lesson_id, status)
-        VALUES (?, ?, ?)
-    """, (user_id, lesson_id, status))
-    await db.commit()
-    await db.close()
 
 # Возвращает 10 последних уроков
 async def schedule():
@@ -145,22 +136,48 @@ async def add_subscription(user_id, type, remaining_classes, expiration_date):
     await db.commit()
     await db.close()
 
-async def one_day_schedule(date): #Сделать чтобы выдовало расписание на день
+async def one_day_schedule(date): #Выдаёт расписание на день
     db = await aiosqlite.connect(DB_NAME)
-    lessons_cur = await db.execute(f"""
-        SELECT lesson_id, name, date, time, duration, instructor, capacity, registered_users
-        FROM lessons
-        WHERE date = {date}
-        """)
-    lessons = await lessons_cur.fetchone()
+    lessons_cur = await db.execute("""
+        SELECT * 
+        FROM lessons 
+        WHERE date = ?
+        """, (date,))
+    lessons = await lessons_cur.fetchall()
     await db.close()
     return lessons
 
+async def create_registration(user_id,lesson_id):
+    db = await aiosqlite.connect(DB_NAME)
+    # Проверяем, существует ли уже запись
+    cursor = await db.execute("SELECT 1 FROM registrations WHERE user_id = ? AND lesson_id = ?", (user_id, lesson_id))
+    existing_entry = await cursor.fetchone()
+
+    if existing_entry is None:
+        # Если записи нет, добавляем новую
+        await db.execute("""
+            INSERT INTO registrations (user_id, lesson_id, status)
+            VALUES (?, ?, ?)
+        """, (user_id, lesson_id, 'status'))
+        await db.commit()
+
+        await db.execute("""
+            UPDATE lessons SET registered_users = registered_users + 1
+            WHERE lesson_id = ?
+        """, (lesson_id,))
+
+        await db.execute("""
+            UPDATE subscriptions SET remaining_classes = remaining_classes - 1
+            WHERE user_id = ? AND expiration_date > CURRENT_TIMESTAMP AND remaining_classes > 0
+        """, (user_id,))
+    await db.commit()
+    await db.close()
+
 async def main():
-    # await add_subscription(1716723261,'test',10,'25-12-10')
-    db_shedule = map(str, await lesson(1))
-    text = '\n'.join(db_shedule)
-    print(text)
+    # await add_subscription(1716723260,'test',10,'2025-03-10')
+    await add_lesson('Zumba', '2025-02-02', '18:00', 1, 'Ivan',5)
+
+    
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -15,7 +15,7 @@ from telegram.constants import ParseMode
 import datetime
 
 from db import subscriptions, add_subscription
-from common_user_func import start
+from common_user_func import start, user_subscription
 
 async def start_without_shipping_callback(
     update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -47,6 +47,7 @@ async def start_without_shipping_callback(
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Responds to the PreCheckoutQuery as the final confirmation for checkout."""
     query = update.pre_checkout_query
+    print('-----------------')
     # Verify if the payload matches, ensure it's from your bot
     if query.invoice_payload not in ["pay",'pay3']:
         # If not, respond with an error

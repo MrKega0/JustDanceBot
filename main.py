@@ -10,11 +10,12 @@ from telegram.ext import (
     PreCheckoutQueryHandler,
     PicklePersistence,
     filters,
+    Job
 )
 from dotenv import load_dotenv
 import os
-from common_user_func import start
-from db import create_tables
+from common_user_func import start, make_registration
+from db import create_tables, create_registration
 
 from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, SCHEDULE, SIGN_UP_LESSON
 
@@ -58,7 +59,10 @@ def main():
                 MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback)
             ],
             SCHEDULE: [CallbackQueryHandler(start, pattern="^close$"), CallbackQueryHandler(user_schedule, pattern="^(<|>)$")], #Доделать
-            SIGN_UP_LESSON: [CallbackQueryHandler(user_schedule, pattern="^close$")]
+            SIGN_UP_LESSON: [
+                CallbackQueryHandler(make_registration, pattern="^sign up$"),
+                CallbackQueryHandler(user_schedule, pattern="^close$")
+                    ]
         },
         fallbacks=[CommandHandler("start", start)],
         name='menu_conv_hand',

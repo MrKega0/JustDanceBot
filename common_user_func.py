@@ -12,18 +12,19 @@ import os
 from constants import id_admin, days
 from states import *
 from telegram.constants import ParseMode
-from datetime import datetime
+from datetime import datetime, timedelta
+from telegram.helpers import escape_markdown
 
 
 from sup_func import escape_text, get_day, day_to_date
 
 import asyncio
-from db import subscriptions, add_subscription, schedule, lesson, one_day_schedule
+from db import subscriptions, add_subscription, schedule, lesson, one_day_schedule, create_registration, add_user
 from admin_func import admin_start
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    
+    await add_user(update.effective_user.id, update.effective_user.username, update.effective_user.full_name)
     if context.args:
         if 'sign_up' in context.args[0]:
             return await sign_up_lesson(update,context)
@@ -55,28 +56,37 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def reply_markup_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-
     await query.answer() 
     if query.data == "schedule": #Расписание
         return await user_schedule(update,context)
     elif query.data == "my subscription":
-        db_subscriptions = map(str, await subscriptions(context._user_id))
-        text = "\n".join(db_subscriptions)
-        await query.edit_message_text(
-            text,
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [InlineKeyboardButton("Купить абонемент", callback_data="pay")],
-                    [InlineKeyboardButton("Купить 3 абонемента", callback_data="pay3")],
-                    [InlineKeyboardButton("Close", callback_data="close")],
-                ]
-            ),
-        )
-        return MY_SUBSCRIPTIONS
+        return await user_subscription(update,context)
     elif query.data == "my appointments": #Мои записи
         print("my appointments")
 
-
+async def user_subscription(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    db_subscriptions = await subscriptions(context._user_id) #subscription_id, user_id, remaining_classes, expiration_date
+    if db_subscriptions:
+        max_date = max([datetime.date(datetime.strptime(i,"%Y-%m-%d")) for _,_,_,i in db_subscriptions])
+        now = datetime.date(datetime.now())
+        time_until_end_subscription = (max_date - now)
+        total_lessons = sum([i for _,_,i,_ in db_subscriptions])
+        print(time_until_end_subscription,'--------------')
+        text = f"У вас есть абонемент на {time_until_end_subscription.days} дней\nОсталось занятий: {total_lessons}"
+    else:
+        text = "У вас нет абонемента"
+    await query.edit_message_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("Купить абонемент", callback_data="pay")],
+                [InlineKeyboardButton("Купить 3 абонемента", callback_data="pay3")],
+                [InlineKeyboardButton("Close", callback_data="close")],
+            ]
+        ),
+    )
+    return MY_SUBSCRIPTIONS
 
 async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
     
@@ -92,6 +102,8 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
     # datetime.date.weekday()
     current_date = day_to_date(context.user_data['current_day'])
     db_shedule = await one_day_schedule(current_date)
+    print(current_date)
+    print(db_shedule)
 
     if context.user_data['current_day']>=1 and context.user_data['current_day']<=7:
         text = f"`{days[context.user_data['current_day']-1]:^15}`"
@@ -130,6 +142,7 @@ async def sign_up_lesson(update:Update,context:ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("Записаться", callback_data="sign up")],
             [InlineKeyboardButton("Close", callback_data="close")],
     ]
+    context.user_data['reg_lesson_id'] = lesson_id
     markup = InlineKeyboardMarkup(keyboard)
     await context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -138,6 +151,16 @@ async def sign_up_lesson(update:Update,context:ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN_V2
     )
     return SIGN_UP_LESSON
+
+async def make_registration(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    lesson_id = context.user_data['reg_lesson_id']
+    await create_registration(update.effective_user.id, lesson_id)
+
+    query = update.callback_query
+    query.answer()
+    
+    
+
 
 async def test():
     db_shedule = await schedule()
