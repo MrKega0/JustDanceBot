@@ -157,7 +157,7 @@ async def make_registration(update:Update,context:ContextTypes.DEFAULT_TYPE):
     await create_registration(update.effective_user.id, lesson_id)
 
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     
 
