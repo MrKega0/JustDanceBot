@@ -17,7 +17,7 @@ import os
 from common_user_func import start, make_registration
 from db import create_tables, create_registration
 
-from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, SCHEDULE, SIGN_UP_LESSON
+from states import START, MAINMENU, ADMIN, MY_SUBSCRIPTIONS, SCHEDULE, SIGN_UP_LESSON, MY_APPOINTMENTS
 
 load_dotenv()
 
@@ -62,7 +62,8 @@ def main():
             SIGN_UP_LESSON: [
                 CallbackQueryHandler(make_registration, pattern="^sign up$"),
                 CallbackQueryHandler(user_schedule, pattern="^close$")
-                    ]
+                    ],
+            MY_APPOINTMENTS: [CallbackQueryHandler(start, pattern="^close$")]
         },
         fallbacks=[CommandHandler("start", start)],
         name='menu_conv_hand',

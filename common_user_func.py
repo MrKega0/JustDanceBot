@@ -72,7 +72,6 @@ async def user_subscription(update:Update,context:ContextTypes.DEFAULT_TYPE):
         now = datetime.date(datetime.now())
         time_until_end_subscription = (max_date - now)
         total_lessons = sum([i for _,_,i,_ in db_subscriptions])
-        print(time_until_end_subscription,'--------------')
         text = f"У вас есть абонемент на {time_until_end_subscription.days} дней\nОсталось занятий: {total_lessons}"
     else:
         text = "У вас нет абонемента"
@@ -102,8 +101,6 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
     # datetime.date.weekday()
     current_date = day_to_date(context.user_data['current_day'])
     db_shedule = await one_day_schedule(current_date)
-    print(current_date)
-    print(db_shedule)
 
     if context.user_data['current_day']>=1 and context.user_data['current_day']<=7:
         text = f"`{days[context.user_data['current_day']-1]:^15}`"
@@ -115,7 +112,6 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
     if db_shedule:
         for lesson in db_shedule:
             text += f"\n[{lesson[5]}: {lesson[3]}](https://t.me/SuperManBossBot?start=sign_up_{lesson[0]})"
-            print(lesson)
     else:
         text += '\nНет записей'
         
@@ -153,11 +149,27 @@ async def sign_up_lesson(update:Update,context:ContextTypes.DEFAULT_TYPE):
     return SIGN_UP_LESSON
 
 async def make_registration(update:Update,context:ContextTypes.DEFAULT_TYPE):
-    lesson_id = context.user_data['reg_lesson_id']
-    await create_registration(update.effective_user.id, lesson_id)
-
     query = update.callback_query
-    query.answer()
+    await query.answer()
+    lesson_id = context.user_data['reg_lesson_id']
+    ansver = await create_registration(update.effective_user.id, lesson_id)
+    if ansver == "successful":
+        message = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text= "Успешная запись"
+        )
+        message_id = message.id
+        # await context.bot.delete_message(
+        #     chat_id=update.effective_chat.id,
+        #     message_id= message_id,
+        #     read_timeout= 
+        # )
+
+
+
+async def my_appointments():
+
+    return MY_APPOINTMENTS
     
     
 

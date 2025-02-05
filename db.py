@@ -147,6 +147,17 @@ async def one_day_schedule(date): #Выдаёт расписание на ден
     await db.close()
     return lessons
 
+async def user_appointments(user_id): #Выдаёт записи пользователя на уроки
+    db = await aiosqlite.connect(DB_NAME)
+    appointments_cur = await db.execute("""
+        SELECT lesson_id
+        FROM registrations
+        WHERE user_id = ? AND status = valid
+        """, (user_id,))
+    lessons_id = await appointments_cur.fetchall()
+    await db.close()
+    return lessons_id
+
 async def create_registration(user_id,lesson_id):
     db = await aiosqlite.connect(DB_NAME)
     # Проверяем, существует ли уже запись
@@ -170,8 +181,12 @@ async def create_registration(user_id,lesson_id):
             UPDATE subscriptions SET remaining_classes = remaining_classes - 1
             WHERE user_id = ? AND expiration_date > CURRENT_TIMESTAMP AND remaining_classes > 0
         """, (user_id,))
-    await db.commit()
-    await db.close()
+        await db.commit()
+        await db.close()
+        return "successful"
+    else:
+        await db.close()
+        return "already exists"
 
 async def main():
     # await add_subscription(1716723260,'test',10,'2025-03-10')

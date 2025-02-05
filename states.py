@@ -5,8 +5,9 @@
     WAIT_PAYMENT, 
     MY_SUBSCRIPTIONS,
     SCHEDULE,
-    SIGN_UP_LESSON
-) = range(8)
+    SIGN_UP_LESSON,
+    MY_APPOINTMENTS
+) = range(9)
 
 
 # STATES = [
