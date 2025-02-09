@@ -141,7 +141,7 @@ async def one_day_schedule(date): #Выдаёт расписание на ден
     lessons_cur = await db.execute("""
         SELECT * 
         FROM lessons 
-        WHERE date = ?
+        WHERE date = ? AND capacity - registered_users > 0
         """, (date,))
     lessons = await lessons_cur.fetchall()
     await db.close()
@@ -153,25 +153,35 @@ async def create_registration(user_id,lesson_id):
     cursor = await db.execute("SELECT 1 FROM registrations WHERE user_id = ? AND lesson_id = ?", (user_id, lesson_id))
     existing_entry = await cursor.fetchone()
 
-    if existing_entry is None:
-        # Если записи нет, добавляем новую
-        await db.execute("""
-            INSERT INTO registrations (user_id, lesson_id, status)
-            VALUES (?, ?, ?)
-        """, (user_id, lesson_id, 'status'))
-        await db.commit()
+    if existing_entry is not None:
+        return 1
+    
+    cursor = await db.execute("SELECT * FROM subscriptions WHERE user_id = ? AND remaining_classes > 0 AND expiration_date > CURRENT_TIMESTAMP ORDER BY subscription_id")
+    existing_entry = cursor.fetchall()
 
-        await db.execute("""
-            UPDATE lessons SET registered_users = registered_users + 1
-            WHERE lesson_id = ?
-        """, (lesson_id,))
+    if existing_entry is not None:
+        return 2
+    
+    # Если записи нет, добавляем новую
+    await db.execute("""
+        INSERT INTO registrations (user_id, lesson_id, status)
+        VALUES (?, ?, ?)
+    """, (user_id, lesson_id, 'status'))
+    await db.commit()
 
-        await db.execute("""
-            UPDATE subscriptions SET remaining_classes = remaining_classes - 1
-            WHERE user_id = ? AND expiration_date > CURRENT_TIMESTAMP AND remaining_classes > 0
-        """, (user_id,))
+    await db.execute("""
+        UPDATE lessons SET registered_users = registered_users + 1
+        WHERE lesson_id = ?
+    """, (lesson_id,))
+
+    await db.execute("""
+        UPDATE subscriptions SET remaining_classes = remaining_classes - 1
+        WHERE subscription_id = ?
+    """, (user_id, existing_entry[0][0]))
+
     await db.commit()
     await db.close()
+    return 0
 
 async def main():
     # await add_subscription(1716723260,'test',10,'2025-03-10')

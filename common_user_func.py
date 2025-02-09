@@ -101,7 +101,9 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
 
     # datetime.date.weekday()
     current_date = day_to_date(context.user_data['current_day'])
+    print('До')
     db_shedule = await one_day_schedule(current_date)
+    
     print(current_date)
     print(db_shedule)
 
@@ -118,7 +120,7 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
             print(lesson)
     else:
         text += '\nНет записей'
-        
+    
     await query.edit_message_text(
         text,
         parse_mode=ParseMode.MARKDOWN_V2,
@@ -132,6 +134,7 @@ async def user_schedule(update:Update, context:ContextTypes.DEFAULT_TYPE):
             ]
         ),
     )
+    print('После')
     return SCHEDULE
 
 async def sign_up_lesson(update:Update,context:ContextTypes.DEFAULT_TYPE):
@@ -154,10 +157,21 @@ async def sign_up_lesson(update:Update,context:ContextTypes.DEFAULT_TYPE):
 
 async def make_registration(update:Update,context:ContextTypes.DEFAULT_TYPE):
     lesson_id = context.user_data['reg_lesson_id']
-    await create_registration(update.effective_user.id, lesson_id)
-
     query = update.callback_query
-    await query.answer()
+    result = await create_registration(update.effective_user.id, lesson_id)
+    if result:
+        if result == 1:
+            error_text = 'Вы уже записаны на этот урок'
+        elif result == 2:
+            error_text = 'У вас нет активного абонемента'
+        await query.answer(error_text, show_alert=True)
+    else:
+        await query.answer('Вы записаны на урок', show_alert=True)
+        return await start(update,context)
+
+
+    
+    
     
     
 
